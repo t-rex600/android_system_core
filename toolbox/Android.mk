@@ -56,11 +56,9 @@ TOOLS := \
 	touch \
 	lsof \
 	du \
-	md5
-
-ifeq ($(HAVE_SELINUX),true)
-
-TOOLS += \
+	md5 \
+	clear \
+	restart \
 	getenforce \
 	setenforce \
 	chcon \
@@ -69,9 +67,6 @@ TOOLS += \
 	getsebool \
 	setsebool \
 	load_policy
-
-endif
-
 
 ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
 TOOLS += r
@@ -97,17 +92,14 @@ else
 	LOCAL_SRC_FILES += reboot.c
 endif
 
-LOCAL_SHARED_LIBRARIES := libcutils libc libusbhost
-
 LOCAL_C_INCLUDES := bionic/libc/bionic
 
-ifeq ($(HAVE_SELINUX),true)
-
-LOCAL_CFLAGS += -DHAVE_SELINUX
-LOCAL_SHARED_LIBRARIES += libselinux
-LOCAL_C_INCLUDES += external/libselinux/include
-
-endif
+LOCAL_SHARED_LIBRARIES := \
+	libcutils \
+	liblog \
+	libc \
+	libusbhost \
+	libselinux
 
 LOCAL_MODULE := toolbox
 

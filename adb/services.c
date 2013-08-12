@@ -215,7 +215,7 @@ static void echo_service(int fd, void *cookie)
     int c;
 
     for(;;) {
-        r = read(fd, buf, 4096);
+        r = adb_read(fd, buf, 4096);
         if(r == 0) goto done;
         if(r < 0) {
             if(errno == EINTR) continue;
@@ -569,6 +569,15 @@ asocket*  host_service_to_socket(const char*  name, const char *serial)
         } else if (!strncmp(name, "any", strlen("any"))) {
             sinfo->transport = kTransportAny;
             sinfo->state = CS_DEVICE;
+        } else if (!strncmp(name, "sideload", strlen("sideload"))) {
+            sinfo->transport = kTransportAny;
+            sinfo->state = CS_SIDELOAD;
+        } else if (!strncmp(name, "recovery", strlen("recovery"))) {
+            sinfo->transport = kTransportAny;
+            sinfo->state = CS_RECOVERY;
+        } else if (!strncmp(name, "online", strlen("online"))) {
+            sinfo->transport = kTransportAny;
+            sinfo->state = CS_ONLINE;
         } else {
             free(sinfo);
             return NULL;

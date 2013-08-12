@@ -114,10 +114,10 @@ char *SocketClient::quoteArg(const char *arg) {
     const char *end = arg + len;
     char *oldresult;
 
-    if (result == NULL) {
-	SLOGW("malloc error (%s)", strerror(errno));
-	return NULL;
-    }   
+    if(result == NULL) {
+        SLOGW("malloc error (%s)", strerror(errno));
+        return NULL;
+    }
 
     *(current++) = '"';
     while (arg < end) {

@@ -32,6 +32,12 @@ __BEGIN_DECLS
  * frameworks/base/include/media/AudioSystem.h
  */
 
+#define AMR_FRAMESIZE 32
+#define QCELP_FRAMESIZE 35
+#define EVRC_FRAMESIZE 23
+#define AMR_WB_FRAMESIZE 61
+#define AAC_FRAMESIZE 2048
+
 typedef int audio_io_handle_t;
 
 /* Audio stream types */
@@ -49,6 +55,9 @@ typedef enum {
     AUDIO_STREAM_TTS              = 9,
 #ifdef QCOM_FM_ENABLED
     AUDIO_STREAM_FM               = 10,
+#endif
+#ifdef QCOM_HARDWARE
+    AUDIO_STREAM_INCALL_MUSIC     = 11,
 #endif
 
     AUDIO_STREAM_CNT,
@@ -78,6 +87,16 @@ typedef enum {
     AUDIO_SOURCE_CNT,
     AUDIO_SOURCE_MAX                 = AUDIO_SOURCE_CNT - 1,
 } audio_source_t;
+
+#ifdef QCOM_HARDWARE
+typedef enum {
+    QCOM_AUDIO_SOURCE_DEFAULT                       = 0x100,
+    QCOM_AUDIO_SOURCE_DIGITAL_BROADCAST_MAIN_AD     = 0x101,
+    QCOM_AUDIO_SOURCE_DIGITAL_BROADCAST_MAIN_ONLY   = 0x104,
+    QCOM_AUDIO_SOURCE_ANALOG_BROADCAST              = 0x102,
+    QCOM_AUDIO_SOURCE_HDMI_IN                       = 0x103,
+} qcom_audio_source_t;
+#endif
 
 /* special audio session values
  * (XXX: should this be living in the audio effects land?)
@@ -289,6 +308,7 @@ enum {
 
     AUDIO_CHANNEL_IN_MONO   = AUDIO_CHANNEL_IN_FRONT,
     AUDIO_CHANNEL_IN_STEREO = (AUDIO_CHANNEL_IN_LEFT | AUDIO_CHANNEL_IN_RIGHT),
+    AUDIO_CHANNEL_IN_FRONT_BACK = (AUDIO_CHANNEL_IN_FRONT | AUDIO_CHANNEL_IN_BACK),
 #ifdef QCOM_HARDWARE
     AUDIO_CHANNEL_IN_5POINT1 = (AUDIO_CHANNEL_IN_FRONT_LEFT |
                                AUDIO_CHANNEL_IN_FRONT_RIGHT |
@@ -506,9 +526,10 @@ typedef enum {
     //Qualcomm Flags
     AUDIO_OUTPUT_FLAG_LPA = 0x1000,      // use LPA
     AUDIO_OUTPUT_FLAG_TUNNEL = 0x2000,   // use Tunnel
-    AUDIO_OUTPUT_FLAG_VOIP_RX = 0x4000   // use this flag in combination with DIRECT to
+    AUDIO_OUTPUT_FLAG_VOIP_RX = 0x4000,  // use this flag in combination with DIRECT to
                                          // indicate HAL to activate EC & NS
                                          // path for VOIP calls
+    AUDIO_OUTPUT_FLAG_INCALL_MUSIC = 0x8000 //use this flag for incall music delivery
 #endif
 } audio_output_flags_t;
 
@@ -692,6 +713,20 @@ static inline bool audio_is_linear_pcm(audio_format_t format)
     return ((format & AUDIO_FORMAT_MAIN_MASK) == AUDIO_FORMAT_PCM);
 }
 
+#ifdef QCOM_HARDWARE
+static inline bool audio_is_supported_compressed(audio_format_t format)
+{
+    if (format == AUDIO_FORMAT_AMR_NB ||
+        format == AUDIO_FORMAT_AMR_WB ||
+        format == AUDIO_FORMAT_EVRC ||
+        format == AUDIO_FORMAT_QCELP ||
+        format == AUDIO_FORMAT_AAC)
+        return true;
+    else
+        return false;
+}
+#endif
+
 static inline size_t audio_bytes_per_sample(audio_format_t format)
 {
     size_t size = 0;
@@ -708,6 +743,18 @@ static inline size_t audio_bytes_per_sample(audio_format_t format)
         size = sizeof(uint8_t);
         break;
 #ifdef QCOM_HARDWARE
+    case AUDIO_FORMAT_AMR_NB:
+        size = 32;
+        break;
+    case AUDIO_FORMAT_EVRC:
+        size = 23;
+        break;
+    case AUDIO_FORMAT_QCELP:
+        size = 35;
+        break;
+    case AUDIO_FORMAT_AAC:
+        size = 2048;
+        break;
     case AUDIO_FORMAT_AMR_WB:
         size = 61;
         break;
