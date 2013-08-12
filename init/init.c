@@ -255,7 +255,6 @@ void service_start(struct service *svc, const char *dynamic_args)
     int needs_console;
     int n;
     char *scon = NULL;
-#ifdef HAVE_SELINUX
     int rc;
 
         /* starting a service removes it from the disabled or reset
@@ -935,25 +934,6 @@ int audit_callback(void *data, security_class_t cls, char *buf, size_t len)
 {
     snprintf(buf, len, "property=%s", !data ? "NULL" : (char *)data);
     return 0;
-}
-
-static int charging_mode_booting(void)
-{
-#ifndef BOARD_CHARGING_MODE_BOOTING_LPM
-    return 0;
-#else
-    int f;
-    char cmb;
-    f = open(BOARD_CHARGING_MODE_BOOTING_LPM, O_RDONLY);
-    if (f < 0)
-        return 0;
-
-    if (1 != read(f, (void *)&cmb,1))
-        return 0;
-
-    close(f);
-    return ('1' == cmb);
-#endif
 }
 
 static int charging_mode_booting(void)

@@ -898,14 +898,6 @@ int do_setsebool(int nargs, char **args) {
         return -EINVAL;
     }
 
-    if (security_set_boolean_list(1, &b, 0) < 0) {
-        ret = -errno;
-        ERROR("setsebool: could not set %s to %s\n", name, value);
-        return ret;
-    }
-#endif
-=======
-    }
 
     if (security_set_boolean_list(1, &b, 0) < 0) {
         ret = -errno;
@@ -913,7 +905,6 @@ int do_setsebool(int nargs, char **args) {
         return ret;
     }
 
->>>>>>> cm-10.2
     return 0;
 }
 
