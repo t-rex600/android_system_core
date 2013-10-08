@@ -138,9 +138,11 @@ void property_changed(const char *name, const char *value);
 void device_changed(const char *name, int is_add);
 #endif
 
+#ifdef INITLOGO
 #define INIT_IMAGE_FILE	"/initlogo.rle"
 
 int load_565rle_image( char *file_name );
+#endif
 
 extern struct selabel_handle *sehandle;
 extern struct selabel_handle *sehandle_prop;
