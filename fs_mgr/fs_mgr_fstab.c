@@ -29,6 +29,7 @@ struct fs_mgr_flag_values {
     int partnum;
     int swap_prio;
     unsigned int zram_size;
+    unsigned int zram_streams;
 };
 
 struct flag_list {
@@ -68,6 +69,7 @@ static struct flag_list fs_mgr_flags[] = {
     { "zramsize=",   MF_ZRAMSIZE },
     { "verify",      MF_VERIFY },
     { "noemulatedsd", MF_NOEMULATEDSD },
+    { "zramstreams=",MF_ZRAMSTREAMS },
     { "defaults",    0 },
     { 0,             0 },
 };
@@ -87,6 +89,7 @@ static int parse_flags(char *flags, struct flag_list *fl,
         memset(flag_vals, 0, sizeof(*flag_vals));
         flag_vals->partnum = -1;
         flag_vals->swap_prio = -1; /* negative means it wasn't specified. */
+        flag_vals->zram_streams = 1;
     }
 
     /* initialize fs_options to the null string */
@@ -146,6 +149,8 @@ static int parse_flags(char *flags, struct flag_list *fl,
                     flag_vals->swap_prio = strtoll(strchr(p, '=') + 1, NULL, 0);
                 } else if ((fl[i].flag == MF_ZRAMSIZE) && flag_vals) {
                     flag_vals->zram_size = strtoll(strchr(p, '=') + 1, NULL, 0);
+                } else if ((fl[i].flag == MF_ZRAMSTREAMS) && flag_vals) {
+                    flag_vals->zram_streams = strtoll(strchr(p, '=') + 1, NULL, 0);
                 }
                 break;
             }
@@ -296,6 +301,7 @@ struct fstab *fs_mgr_read_fstab(const char *fstab_path)
         fstab->recs[cnt].partnum = flag_vals.partnum;
         fstab->recs[cnt].swap_prio = flag_vals.swap_prio;
         fstab->recs[cnt].zram_size = flag_vals.zram_size;
+        fstab->recs[cnt].zram_streams = flag_vals.zram_streams;
         cnt++;
     }
     fclose(fstab_file);
