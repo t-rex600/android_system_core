@@ -25,11 +25,13 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <unistd.h>
+
 #include <batteryservice/BatteryService.h>
 #include <cutils/klog.h>
 #include <cutils/properties.h>
-#include <sys/types.h>
+#include <log/log_read.h>
 #include <utils/Errors.h>
 #include <utils/String8.h>
 #include <utils/Vector.h>
@@ -141,6 +143,7 @@ BatteryMonitor::PowerSupplyType BatteryMonitor::readPowerSupplyType(const String
             { "Wipower", ANDROID_POWER_SUPPLY_TYPE_WIRELESS },
             { "DockBattery", ANDROID_POWER_SUPPLY_TYPE_DOCK_BATTERY },
             { "DockAC", ANDROID_POWER_SUPPLY_TYPE_DOCK_AC },
+            { "USB_HVDCP", ANDROID_POWER_SUPPLY_TYPE_AC },
             { NULL, 0 },
     };
 
@@ -188,6 +191,7 @@ bool BatteryMonitor::update(void) {
     props.chargerDockAcOnline = false;
     props.batteryStatus = BATTERY_STATUS_UNKNOWN;
     props.batteryHealth = BATTERY_HEALTH_UNKNOWN;
+    props.maxChargingCurrent = 0;
     props.dockBatteryStatus = BATTERY_STATUS_UNKNOWN;
     props.dockBatteryHealth = BATTERY_HEALTH_UNKNOWN;
 
@@ -294,6 +298,15 @@ bool BatteryMonitor::update(void) {
                                 KLOG_WARNING(LOG_TAG, "%s: Unknown power supply type\n",
                                              name);
                             }
+                            path.clear();
+                            path.appendFormat("%s/%s/current_max", POWER_SUPPLY_SYSFS_PATH,
+                                           name);
+                            if (access(path.string(), R_OK) == 0) {
+                                int maxChargingCurrent = getIntField(path);
+                                if (props.maxChargingCurrent < maxChargingCurrent) {
+                                       props.maxChargingCurrent = maxChargingCurrent;
+                                }
+                           }
                         }
                     }
                 }
@@ -351,11 +364,32 @@ bool BatteryMonitor::update(void) {
                  "dock-battery none");
         }
 
-        KLOG_WARNING(LOG_TAG, "%s %s chg=%s%s%s%s\n", dmesgline, dmesglinedock,
-                     props.chargerAcOnline ? "a" : "",
-                     props.chargerUsbOnline ? "u" : "",
-                     props.chargerWirelessOnline ? "w" : "",
-                     props.chargerDockAcOnline ? "d" : "");
+        size_t len = strlen(dmesgline);
+        snprintf(dmesgline + len, sizeof(dmesgline) - len, " chg=%s%s%s",
+                 props.chargerAcOnline ? "a" : "",
+                 props.chargerUsbOnline ? "u" : "",
+                 props.chargerWirelessOnline ? "w" : "");
+
+        log_time realtime(CLOCK_REALTIME);
+        time_t t = realtime.tv_sec;
+        struct tm *tmp = gmtime(&t);
+        if (tmp) {
+            static const char fmt[] = " %Y-%m-%d %H:%M:%S.XXXXXXXXX UTC";
+            len = strlen(dmesgline);
+            if ((len < (sizeof(dmesgline) - sizeof(fmt) - 8)) // margin
+                    && strftime(dmesgline + len, sizeof(dmesgline) - len,
+                                fmt, tmp)) {
+                char *usec = strchr(dmesgline + len, 'X');
+                if (usec) {
+                    len = usec - dmesgline;
+                    snprintf(dmesgline + len, sizeof(dmesgline) - len,
+                             "%09u", realtime.tv_nsec);
+                    usec[9] = ' ';
+                }
+            }
+        }
+
+        KLOG_WARNING(LOG_TAG, "%s\n", dmesgline);
     }
 
     healthd_mode_ops->battery_update(&props);
@@ -492,9 +526,9 @@ void BatteryMonitor::dumpState(int fd) {
     int v;
     char vs[128];
 
-    snprintf(vs, sizeof(vs), "ac: %d usb: %d wireless: %d dock-ac: %d\n",
+    snprintf(vs, sizeof(vs), "ac: %d usb: %d wireless: %d dock-ac: %d current_max: %d\n",
              props.chargerAcOnline, props.chargerUsbOnline,
-             props.chargerWirelessOnline, props.chargerDockAcOnline);
+             props.chargerWirelessOnline, props.chargerDockAcOnline, props.maxChargingCurrent);
     write(fd, vs, strlen(vs));
     snprintf(vs, sizeof(vs), "status: %d health: %d present: %d\n",
              props.batteryStatus, props.batteryHealth, props.batteryPresent);
