@@ -38,10 +38,12 @@ int do_write(int nargs, char **args);
 int do_copy(int nargs, char **args);
 int do_chown(int nargs, char **args);
 int do_chmod(int nargs, char **args);
+int do_log(int nargs, char **args);
 int do_loglevel(int nargs, char **args);
 int do_load_persist_props(int nargs, char **args);
 int do_load_all_props(int nargs, char **args);
 int do_wait(int nargs, char **args);
+int do_umount(int nargs, char **args);
 #define __MAKE_KEYWORD_ENUM__
 #define KEYWORD(symbol, flags, nargs, func) K_##symbol,
 enum {
@@ -103,10 +105,12 @@ enum {
     KEYWORD(copy,        COMMAND, 2, do_copy)
     KEYWORD(chown,       COMMAND, 2, do_chown)
     KEYWORD(chmod,       COMMAND, 2, do_chmod)
+    KEYWORD(log,         COMMAND, 1, do_log)
     KEYWORD(loglevel,    COMMAND, 1, do_loglevel)
     KEYWORD(load_persist_props,    COMMAND, 0, do_load_persist_props)
     KEYWORD(load_all_props,        COMMAND, 0, do_load_all_props)
     KEYWORD(ioprio,      OPTION,  0, 0)
+    KEYWORD(umount,		COMMAND, 1, do_umount)
 #ifdef __MAKE_KEYWORD_ENUM__
     KEYWORD_COUNT,
 };
