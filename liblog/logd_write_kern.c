@@ -168,7 +168,8 @@ int __android_log_buf_write(int bufID, int prio, const char *tag, const char *ms
             snprintf(tmp_tag, sizeof(tmp_tag), "use-Rlog/RLOG-%s", tag);
             tag = tmp_tag;
     }
-#if __BIONIC__
+
+#ifdef __BIONIC__
     if (prio == ANDROID_LOG_FATAL) {
         android_set_abort_message(msg);
     }
